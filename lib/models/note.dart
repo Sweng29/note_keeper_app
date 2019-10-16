@@ -1,5 +1,3 @@
-import 'package:flutter/cupertino.dart';
-
 class Note {
   int _id;
   String _title;
@@ -59,8 +57,8 @@ class Note {
     this._id = map['id'];
     this._title = map['title'];
     this._description = map['description'];
-    debugPrint(map['priority']);
-    this._priority = int.parse(map['priority']);
+    this._priority = map[
+        'priority']; //int.parse(map['priority']); // some divices may have issue with the code but just try parsing string to int
     this._date = map['date'];
   }
 }
