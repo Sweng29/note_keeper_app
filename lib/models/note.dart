@@ -1,9 +1,16 @@
+import 'package:flutter/cupertino.dart';
+
 class Note {
   int _id;
   String _title;
   String _description;
   String _date;
   int _priority;
+
+  Note(this._title, this._date, this._priority, [this._description]);
+
+  Note.withId(this._id, this._title, this._date, this._priority,
+      [this._description]);
 
   int get id => _id;
 
@@ -34,7 +41,7 @@ class Note {
   }
 
   // Convert a Note object into Map object
-  Map<String, dynamic> topMap() {
+  Map<String, dynamic> toMap() {
     var map = Map<String, dynamic>();
 
     if (id != null) {
@@ -49,10 +56,11 @@ class Note {
   }
 
   Note.fromMapObject(Map<String, dynamic> map) {
-    map['id'] = _id;
-    map['title'] = _title;
-    map['description'] = _description;
-    map['priority'] = _priority;
-    map['date'] = _date;
+    this._id = map['id'];
+    this._title = map['title'];
+    this._description = map['description'];
+    debugPrint(map['priority']);
+    this._priority = int.parse(map['priority']);
+    this._date = map['date'];
   }
 }

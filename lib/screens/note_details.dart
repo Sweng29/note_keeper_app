@@ -1,28 +1,37 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:note_keeper_app/dbConfig/database_helper.dart';
+import 'package:note_keeper_app/models/note.dart';
 
 class NoteDetails extends StatefulWidget {
-  String appBarTitle;
+  final String appBarTitle;
+  final Note note;
 
-  NoteDetails(this.appBarTitle);
+  NoteDetails(this.note, this.appBarTitle);
 
   @override
   State createState() {
-    return NoteDetailState(appBarTitle);
+    return NoteDetailState(note, appBarTitle);
   }
 }
 
 class NoteDetailState extends State<NoteDetails> {
   static var _periorities = ['High', 'Low'];
   String appBarTitle;
+  Note note;
+  DatabaseHelper databaseHelper = DatabaseHelper();
+  TextEditingController titleController = new TextEditingController();
+  TextEditingController descriptionController = new TextEditingController();
 
-  NoteDetailState(this.appBarTitle);
+  NoteDetailState(this.note, this.appBarTitle);
 
   @override
   Widget build(BuildContext context) {
     TextStyle textStyle = Theme.of(context).textTheme.title;
-    TextEditingController titleController = new TextEditingController();
-    TextEditingController descriptionController = new TextEditingController();
+    titleController.text = note.title;
+    descriptionController.text = note.description;
+
     return WillPopScope(
         onWillPop: () {
           moveToLastScreen();
@@ -50,11 +59,12 @@ class NoteDetailState extends State<NoteDetails> {
                       );
                     }).toList(),
                     style: textStyle,
-                    value: 'Low',
+                    value: getPriorityAsString(note.priority),
                     onChanged: (valueSelectedByUser) {
                       setState(() {
                         debugPrint(
                             'Value selected by User : $valueSelectedByUser');
+                        updatePriorityAsInt(valueSelectedByUser);
                       });
                     },
                   ),
@@ -67,6 +77,7 @@ class NoteDetailState extends State<NoteDetails> {
                     style: textStyle,
                     onChanged: (value) {
                       debugPrint('Something changed by user in text field.');
+                      updateTitle();
                     },
                     decoration: InputDecoration(
                         labelText: 'Title',
@@ -84,6 +95,7 @@ class NoteDetailState extends State<NoteDetails> {
                     style: textStyle,
                     onChanged: (value) {
                       debugPrint('Something changed by user in text field.');
+                      updateDescription();
                     },
                     decoration: InputDecoration(
                         labelText: 'Description',
@@ -107,6 +119,7 @@ class NoteDetailState extends State<NoteDetails> {
                           ),
                           onPressed: () {
                             debugPrint('Save button clicked.');
+                            _save();
                           },
                         ),
                       ),
@@ -118,11 +131,12 @@ class NoteDetailState extends State<NoteDetails> {
                           color: Theme.of(context).primaryColorDark,
                           textColor: Theme.of(context).primaryColorLight,
                           child: Text(
-                            'Clear',
+                            'Delete',
                             textScaleFactor: 1.5,
                           ),
                           onPressed: () {
-                            debugPrint('Clear button clicked.');
+                            debugPrint('Delete button clicked.');
+                            delete();
                           },
                         ),
                       )
@@ -136,6 +150,78 @@ class NoteDetailState extends State<NoteDetails> {
   }
 
   void moveToLastScreen() {
-    Navigator.pop(context);
+    Navigator.pop(context, true);
+  }
+
+  void updatePriorityAsInt(String value) {
+    switch (value) {
+      case 'High':
+        note.priority = 1;
+        break;
+      case 'Low':
+        note.priority = 2;
+        break;
+    }
+  }
+
+  String getPriorityAsString(int value) {
+    String priority;
+    switch (value) {
+      case 1:
+        priority = _periorities[0]; // High
+        break;
+      case 2:
+        priority = _periorities[1];
+        break;
+    }
+    return priority;
+  }
+
+  void updateDescription() {
+    note.description = descriptionController.text;
+  }
+
+  void updateTitle() {
+    note.title = titleController.text;
+  }
+
+  void delete() async {
+    moveToLastScreen();
+    if (note.id == null) {
+      showAlertDialog('Status', 'No note was deleted');
+      return;
+    }
+
+    int result = await databaseHelper.deleteNote(note.id);
+    if (result != 0) {
+      showAlertDialog('Status', 'Note was deleted successfully.');
+    } else {
+      showAlertDialog('Status', 'No note was deleted, try again.');
+    }
+  }
+
+  void _save() async {
+    moveToLastScreen();
+    note.date = DateFormat.yMMMd().format(DateTime.now());
+    int result;
+    if (note.id != null) {
+      result = await databaseHelper.updateNote(note);
+    } else {
+      result = await databaseHelper.insertNote(note);
+    }
+
+    if (result != 0) {
+      showAlertDialog('Status', 'Note saved successfully.');
+    } else {
+      showAlertDialog('Status', 'Could not save note, try again.');
+    }
+  }
+
+  showAlertDialog(String status, String message) {
+    AlertDialog alertDialog = AlertDialog(
+      title: Text(status),
+      content: Text(message),
+    );
+    showDialog(context: context, builder: (_) => alertDialog);
   }
 }
